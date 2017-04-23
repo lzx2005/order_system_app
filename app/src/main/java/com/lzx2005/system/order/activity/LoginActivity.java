@@ -1,23 +1,21 @@
 package com.lzx2005.system.order.activity;
 
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.ViewGroup;
-import android.webkit.MimeTypeMap;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.alibaba.fastjson.JSONObject;
 import com.lzx2005.system.order.R;
 import com.lzx2005.system.order.http.task.LoginTask;
+
 
 
 public class LoginActivity extends AppCompatActivity {
@@ -47,7 +45,9 @@ public class LoginActivity extends AppCompatActivity {
                 return;
             }
             //alert(username.getText()+","+password.getText());
-            LoginTask loginTask = new LoginTask("http://www.baidu.com", handler);
+            String host = getResources().getString(R.string.server_host);
+            String url = host + "/user/login?username="+username.getText()+"&password="+password.getText();
+            LoginTask loginTask = new LoginTask(url, handler);
             new Thread(loginTask).start();
         });
 
@@ -60,28 +60,23 @@ public class LoginActivity extends AppCompatActivity {
             super.handleMessage(msg);
             Bundle data = msg.getData();
             String val = data.getString("value");
-            Log.i("lzx2005", val);
+            Log.e("lzx2005", val);
+            //alert(val);
+            SharedPreferences loginInfo = getSharedPreferences("loginInfo", 0);
 
-
-            WebView webView = new WebView(getApplicationContext());
-            ActionBar.LayoutParams layoutParams = new ActionBar.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-            );
-            webView.setLayoutParams(layoutParams);
-            linearLayout.addView(webView);
-            webView.setWebViewClient(new WebViewClient(){
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    view.loadUrl(url);
-                    return true;
+            JSONObject jsonObject = JSONObject.parseObject(val);
+            if(jsonObject.getInteger("code")==0){
+                String token = jsonObject.getString("data");
+                if(TextUtils.isEmpty(token)){
+                    alert("无法获取服务器返回的登录验证信息");
+                }else{
+                    alert("登录成功！");
+                    loginInfo.edit().putString("token",token).apply();
+                    //跳转
                 }
-            });
-
-
-
-            webView.loadUrl("https://www.baidu.com");
-            //webView.loadData(val, );
+            }else{
+                alert(jsonObject.getString("msg"));
+            }
         }
     };
 

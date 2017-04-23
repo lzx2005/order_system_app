@@ -25,21 +25,16 @@ public class LoginTask implements Runnable {
 
     @Override
     public void run() {
-        // TODO
-        // 在这里进行 http request.网络请求相关操作
-
         OkHttpClient client = new OkHttpClient();
         Message msg = new Message();
         Bundle data = new Bundle();
-
-
         Request request = new Request.Builder()
+                .get()
                 .url(url)
                 .build();
-
-        Response response = null;
         try {
-            response = client.newCall(request).execute();
+
+            Response response = client.newCall(request).execute();
             data.putString("value", response.body().string());
             msg.setData(data);
             handler.sendMessage(msg);
