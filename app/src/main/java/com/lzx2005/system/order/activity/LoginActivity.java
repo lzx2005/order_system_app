@@ -94,14 +94,10 @@ public class LoginActivity extends AppCompatActivity {
                     loginInfo.edit().putString("token",token).apply();
                     //跳转
                     progressDialog.dismiss();
-
-                    NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-                    LinearLayout linearLayout = (LinearLayout)navigationView.getHeaderView(0);
-                    Menu menu = navigationView.getMenu();
-                    MenuItem item = menu.findItem(R.id.nav_exit);
-
-
-                    LoginActivity.this.finish();
+                    Intent intent = new Intent();
+                    intent.putExtra("isSuccess",true);
+                    setResult(RESULT_OK,intent);
+                    finish();
                 }
             }else{
                 alert(jsonObject.getString("msg"));

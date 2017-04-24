@@ -3,8 +3,11 @@ package com.lzx2005.system.order.activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -19,13 +22,22 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.alibaba.fastjson.JSONObject;
 import com.lzx2005.system.order.R;
+import com.lzx2005.system.order.http.task.GetUserInfoTask;
+import com.lzx2005.system.order.http.task.LoginTask;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     SharedPreferences loginInfo;
+
+    Toolbar toolbar;
     FloatingActionButton fab;
+    DrawerLayout drawer;
+    NavigationView navigationView;
+    LinearLayout linearLayout;
+
     MenuItem exitMenuItem;
 
     TextView usernameHead;
@@ -33,48 +45,42 @@ public class MainActivity extends AppCompatActivity
 
     ImageView userNoLoginImage;
 
+    Menu slideMenu;
+    MenuItem navExitMenuItem;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         loginInfo = getSharedPreferences("loginInfo", 0);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        loadView();
         setSupportActionBar(toolbar);
-
-        fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("知道了", v -> Log.e("lzx2005","1")).show());
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-
-        LinearLayout linearLayout = (LinearLayout)navigationView.getHeaderView(0);
-        Menu menu = navigationView.getMenu();
-        MenuItem item = menu.findItem(R.id.nav_exit);
-
-
-
-        String token = loginInfo.getString("token","no");
+        String token = loginInfo.getString("token","no");//找到登录信息
         if(token.equals("no")){
             //未登录
-            item.setVisible(false);
-            //exitMenuItem.setVisible(false);
+            navExitMenuItem.setVisible(false);
             linearLayout.setOnClickListener(v->{
                 Intent intent = new Intent(MainActivity.this,LoginActivity.class);
-                MainActivity.this.startActivity(intent);
+                startActivityForResult(intent,1);
             });
         }else{
-            //usernameHead.setText("lzx2005");
-            //userinfoHead.setText("asdadwdawdaaaaaaaaaaaaa");
+            Log.i("lzx","已经登录，从服务器获取信息");
+            String host = getResources().getString(R.string.server_host);
+            String url = host + "/user/userInfo?token="+token;
+            GetUserInfoTask getUserInfoTask = new GetUserInfoTask(url, handler);
+            new Thread(getUserInfoTask).start();
         }
-
     }
 
     @Override
@@ -127,10 +133,65 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.nav_exit) {
             loginInfo.edit().remove("token").apply();
+            MainActivity.this.recreate();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode){
+            case 1:
+                //更新
+                Log.i("lzx","开始获取用户信息");
+                String token = loginInfo.getString("token", "");
+                String host = getResources().getString(R.string.server_host);
+                String url = host + "/user/userInfo?token="+token;
+                GetUserInfoTask getUserInfoTask = new GetUserInfoTask(url, handler);
+                new Thread(getUserInfoTask).start();
+                break;
+            default:
+        }
+    }
+
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            navExitMenuItem.setVisible(true);
+            Bundle data = msg.getData();
+            String val = data.getString("value");
+            Log.i("lzx", val);
+            JSONObject jsonObject = JSONObject.parseObject(val);
+            if(jsonObject.getInteger("code")==0){
+                JSONObject data1 = jsonObject.getJSONObject("data");
+                String username = data1.getString("username");
+                usernameHead.setText(username);
+                userinfoHead.setText("欢迎回来！");
+            }else{
+                Log.e(MainActivity.class.getName(),jsonObject.toJSONString());
+            }
+        }
+    };
+
+
+    private void loadView(){
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
+        linearLayout = (LinearLayout)navigationView.getHeaderView(0);
+
+
+        usernameHead = (TextView) linearLayout.findViewById(R.id.username_head);
+        userinfoHead = (TextView) linearLayout.findViewById(R.id.userinfo_head);
+
+
+        slideMenu = navigationView.getMenu();
+        navExitMenuItem = slideMenu.findItem(R.id.nav_exit);
+
     }
 }
