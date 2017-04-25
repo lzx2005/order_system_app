@@ -89,6 +89,7 @@ public class LoginActivity extends AppCompatActivity {
                 String token = jsonObject.getString("data");
                 if(TextUtils.isEmpty(token)){
                     alert("无法获取服务器返回的登录验证信息");
+                    progressDialog.dismiss();
                 }else{
                     alert("登录成功！");
                     loginInfo.edit().putString("token",token).apply();
@@ -101,6 +102,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }else{
                 alert(jsonObject.getString("msg"));
+                progressDialog.dismiss();
             }
         }
     };

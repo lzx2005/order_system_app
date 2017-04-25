@@ -121,13 +121,10 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
+        if (id == R.id.nav_near_rest) {
+            Intent intent = new Intent(MainActivity.this,MapActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_my_order) {
 
         } else if (id == R.id.nav_share) {
 
@@ -146,12 +143,17 @@ public class MainActivity extends AppCompatActivity
         switch (requestCode){
             case 1:
                 //更新
-                Log.i("lzx","开始获取用户信息");
                 String token = loginInfo.getString("token", "");
-                String host = getResources().getString(R.string.server_host);
-                String url = host + "/user/userInfo?token="+token;
-                GetUserInfoTask getUserInfoTask = new GetUserInfoTask(url, handler);
-                new Thread(getUserInfoTask).start();
+                if(TextUtils.isEmpty(token)){
+                    Log.i("lzx","未登录，不获取用户信息");
+                    //未登录
+                }else{
+                    Log.i("lzx","登录成功，开始获取用户信息");
+                    String host = getResources().getString(R.string.server_host);
+                    String url = host + "/user/userInfo?token="+token;
+                    GetUserInfoTask getUserInfoTask = new GetUserInfoTask(url, handler);
+                    new Thread(getUserInfoTask).start();
+                }
                 break;
             default:
         }
@@ -165,7 +167,9 @@ public class MainActivity extends AppCompatActivity
             String val = data.getString("value");
             Log.i("lzx", val);
             JSONObject jsonObject = JSONObject.parseObject(val);
-            if(jsonObject.getInteger("code")==0){
+            if(jsonObject==null){
+                Log.i("lzx2005","未登录");
+            }else if(jsonObject.getInteger("code")==0){
                 JSONObject data1 = jsonObject.getJSONObject("data");
                 String username = data1.getString("username");
                 usernameHead.setText(username);
