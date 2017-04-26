@@ -1,13 +1,18 @@
 package com.lzx2005.system.order.activity;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcel;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -27,19 +32,23 @@ import com.lzx2005.system.order.http.task.GetUserInfoTask;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapActivity extends AppCompatActivity implements AMap.OnCameraChangeListener,AMap.OnMarkerClickListener{
+public class MapActivity extends AppCompatActivity implements AMap.OnCameraChangeListener,AMap.OnMarkerClickListener,DialogInterface.OnClickListener{
 
     SharedPreferences loginInfo;
     MapView mMapView = null;
     AMap aMap;
-    ProgressDialog progressDialog;
+    AlertDialog alertDialog;
 
+    //TextView restName;
     List<Marker> markers = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         loginInfo = getSharedPreferences("loginInfo", 0);
+
+        //linearLayout = (LinearLayout) findViewById(R.id.rest_info);
+        //restName = (TextView) findViewById(R.id.rest_name);
         mMapView = (MapView) findViewById(R.id.map);
         //在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，创建地图
         mMapView.onCreate(savedInstanceState);
@@ -137,7 +146,6 @@ public class MapActivity extends AppCompatActivity implements AMap.OnCameraChang
                                     .title(content1.getString("restaurantName"))
                                     .snippet(re.getString("restaurantName"))
                     );
-
                     markers.add(marker);
                 }
             }else{
@@ -149,6 +157,32 @@ public class MapActivity extends AppCompatActivity implements AMap.OnCameraChang
     @Override
     public boolean onMarkerClick(Marker marker) {
         Log.i("lzx","Marker被点击");
-        return false;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        alertDialog = builder
+                .setTitle("餐馆详情")
+                .setMessage(marker.getTitle())
+                .setPositiveButton("查看详情",this)
+                .setNegativeButton("取消",this)
+                .setNeutralButton("中间",this)
+                .show();
+
+        //restName.setText(marker.getTitle());
+        //linearLayout.setVisibility(View.VISIBLE);
+        return true;
+    }
+
+    @Override
+    public void onClick(DialogInterface dialog, int which) {
+        switch (which){
+            case -1:
+                Log.i("lzx","确定"+which);
+                break;
+            case -2:
+                Log.i("lzx","取消"+which);
+                break;
+            case -3:
+                Log.i("lzx","其他"+which);
+                break;
+        }
     }
 }
